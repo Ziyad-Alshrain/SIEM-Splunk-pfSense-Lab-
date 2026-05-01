@@ -35,17 +35,27 @@ At this stage, the environment was ready for data ingestion and monitoring.
 
 ### Firewall Rules
 ![Firewall Rules](screenshots/firewall-rules.png)
+
 ## Phase 2: Log Collection
 
 The objective here was to get meaningful data into Splunk:
 
-Installed Splunk Enterprise on Ubuntu
-Enabled receiving on port 9997
-Installed Splunk Universal Forwarder on the Windows endpoint
-Collected Windows Event Logs:
-Security
-System
-Application
+- Installed Splunk Enterprise on Ubuntu
+- Enabled receiving on port 9997
+- Installed Splunk Universal Forwarder on the Windows endpoint
+- Collected Windows Event Logs:
+  - Security
+  - System
+  - Application
+
+### Splunk Server Status
+![Splunk Server](screenshots/splunk-server-running.png)
+
+### Forwarder Connection
+![Forwarder Active](screenshots/forwarder-active.png)
+
+### Splunk Logs (index=*)
+![Splunk Logs](screenshots/splunk-logs.png)
 
 This phase established the data pipeline required for detection and analysis.
 
