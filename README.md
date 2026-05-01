@@ -24,12 +24,17 @@ Network segmentation was implemented to isolate systems and control communicatio
 
 This phase focused on building the foundation:
 
-Created three virtual machines (Ubuntu, Windows, pfSense)
-Configured segmented networks using pfSense
-Applied firewall rules to control traffic between subnets
+- Created three virtual machines (Ubuntu, Windows, pfSense)
+- Configured segmented networks using pfSense
+- Applied firewall rules to control traffic between subnets
 
 At this stage, the environment was ready for data ingestion and monitoring.
 
+### pfSense Interfaces
+![pfSense Interfaces](screenshots/pfsense-interfaces.png)
+
+### Firewall Rules
+![Firewall Rules](screenshots/firewall-rules.png)
 ## Phase 2: Log Collection
 
 The objective here was to get meaningful data into Splunk:
