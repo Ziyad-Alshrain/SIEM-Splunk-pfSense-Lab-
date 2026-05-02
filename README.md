@@ -86,6 +86,12 @@ index=* EventCode=4657
 | where NOT Process_Name="*explorer.exe"
 ```
 
+![Splunk Registry Search](screenshots/splunk-registry-search.png)
+
+A Splunk alert was configured to trigger when suspicious registry persistence activity is detected.
+
+![Registry Alert Config](screenshots/registry-alert-config.png)
+
 ## Phase 4: Attack Simulation and Validation
 
 To test the detection, I simulated a simple registry persistence technique on the Windows endpoint.
@@ -95,6 +101,22 @@ A new registry value named `evil` was created under the Windows Run key:
 ```text
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run
 ```
+
+The value was configured to run:
+
+```text
+C:\Windows\System32\cmd.exe
+```
+
+This type of registry location is commonly abused because anything placed under the Run key can execute when the user logs in.
+
+![Malicious Run Key](screenshots/malicious-run-key.png)
+
+After creating and modifying the registry value, Splunk captured the activity as Windows Security EventCode `4657`.
+
+![Registry Event Detected](screenshots/registry-event-detected.png)
+
+The event showed the registry path, the value name `evil`, the new value data, and the process responsible for the change. This confirmed that the Windows auditing configuration, Universal Forwarder, Splunk search, and alerting logic were working as expected.
 ## Phase 5: Incident Response
 
 This phase covered basic response actions:
