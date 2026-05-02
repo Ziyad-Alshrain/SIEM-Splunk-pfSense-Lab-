@@ -61,25 +61,40 @@ This phase established the data pipeline required for detection and analysis.
 
 ## Phase 3: Detection Engineering
 
-In this phase, raw logs were converted into actionable detections:
+After confirming that Windows logs were successfully reaching Splunk, the next step was to turn raw events into useful detections.
 
-Developed detection rules using SPL
-Built correlation searches to identify suspicious patterns
-Implemented severity levels (High / Medium / Low)
-Reduced noise by filtering out low-value or redundant events
+The first detection use case focused on registry-based persistence. This technique is commonly used by malware to maintain access by adding a value under Windows Run keys, allowing a program to start automatically when the user logs in.
 
-The goal here was to create useful alerts instead of overwhelming noise.
+### Registry Persistence Detection
 
-## Phase 4: Attack Simulation
+Windows Registry auditing was enabled on the endpoint to generate security events when registry keys or values are modified.
 
-To test the detection logic, different attack scenarios were simulated:
+![Audit Policy](screenshots/audit-policy.png)
 
-Brute-force login attempts
-Execution of suspicious PowerShell commands
-Observing how these activities appeared in Splunk
+Registry auditing was then configured on `HKCU\Software` to monitor changes under the user registry hive.
 
-This helped validate whether the detections were actually effective.
+![Registry Auditing Configuration](screenshots/registry-auditing-config.png)
 
+The detection focused on suspicious changes to Run and RunOnce registry keys.
+
+```spl
+index=* EventCode=4657
+(
+    Object_Name="*\\CurrentVersion\\Run*"
+    OR Object_Name="*\\CurrentVersion\\RunOnce*"
+)
+| where NOT Process_Name="*explorer.exe"
+```
+
+## Phase 4: Attack Simulation and Validation
+
+To test the detection, I simulated a simple registry persistence technique on the Windows endpoint.
+
+A new registry value named `evil` was created under the Windows Run key:
+
+```text
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+```
 ## Phase 5: Incident Response
 
 This phase covered basic response actions:
