@@ -1,47 +1,53 @@
-# SIEM-Splunk-pfSense-Lab-
+# SIEM-Splunk-pfSense-Lab
+
 Hands-on SOC lab using Splunk Enterprise, pfSense, and Windows endpoint telemetry.
 
-SIEM Splunk Lab (pfSense + Windows)
 ## Overview
 
 This project is a hands-on Security Operations Center (SOC) lab built using Splunk Enterprise, pfSense firewall, and a Windows endpoint.
 
-The goal was to simulate a realistic SOC environment and go through the full workflow — starting from log collection, moving into detection engineering, then validating detections through attack simulation, and finally performing basic incident response.
+The goal was to build a small but realistic SOC environment and walk through the full workflow: setting up the lab, collecting logs, building detections, validating them through attack simulation, and responding to a ransomware incident.
 
-The focus of this lab is not just deploying tools, but understanding how they work together in a practical defensive security setup.
+This lab focuses on understanding how the tools work together in a practical blue team setup, not just installing them.
 
-Lab Architecture
+## Lab Architecture
 
 The lab includes three main systems:
 
-Splunk Server (Ubuntu): "10.10.10.10"
-Windows Client: "10.10.30.10"
-pfSense Firewall (used for network segmentation and traffic control)
+- Splunk Server (Ubuntu): `10.10.10.10`
+- Windows Client: `10.10.30.10`
+- pfSense Firewall: used for network segmentation and traffic control
 
-Network segmentation was implemented to isolate systems and control communication between subnets, making the setup closer to a real environment.
+Network segmentation was implemented to isolate systems and control communication between subnets.
 
 ## Phase 1: Infrastructure Setup
 
-This phase focused on building the foundation:
+This phase focused on building the foundation of the lab.
 
-- Created three virtual machines (Ubuntu, Windows, pfSense)
+Tasks completed:
+
+- Created three virtual machines: Ubuntu, Windows, and pfSense
 - Configured segmented networks using pfSense
 - Applied firewall rules to control traffic between subnets
 
-At this stage, the environment was ready for data ingestion and monitoring.
+At this stage, the environment was ready for log collection and monitoring.
 
 ### pfSense Interfaces
+
 ![pfSense Interfaces](screenshots/pfsense-interfaces.png)
 
 ### Firewall Rules
+
 ![Firewall Rules](screenshots/firewall-rules.png)
 
 ## Phase 2: Log Collection
 
-The objective here was to get meaningful data into Splunk:
+The goal of this phase was to get meaningful Windows logs into Splunk.
+
+Tasks completed:
 
 - Installed Splunk Enterprise on Ubuntu
-- Enabled receiving on port 9997
+- Enabled Splunk receiving on port `9997`
 - Installed Splunk Universal Forwarder on the Windows endpoint
 - Collected Windows Event Logs:
   - Security
@@ -49,21 +55,24 @@ The objective here was to get meaningful data into Splunk:
   - Application
 
 ### Splunk Server Status
+
 ![Splunk Server](screenshots/splunk-server-running.png)
 
 ### Forwarder Connection
+
 ![Forwarder Active](screenshots/forwarder-active.png)
 
-### Splunk Logs (index=*)
+### Splunk Logs
+
 ![Splunk Logs](screenshots/splunk-logs.png)
 
-This phase established the data pipeline required for detection and analysis.
+This phase confirmed that the Windows endpoint was successfully sending logs to Splunk.
 
 ## Phase 3: Detection Engineering
 
-After confirming that Windows logs were successfully reaching Splunk, the next step was to turn raw events into useful detections.
+After confirming that Windows logs were reaching Splunk, the next step was to turn raw events into useful detections.
 
-The first detection use case focused on registry-based persistence. This technique is commonly used by malware to maintain access by adding a value under Windows Run keys, allowing a program to start automatically when the user logs in.
+The first detection focused on registry-based persistence. This is a common technique where malware or an attacker adds a value under Windows Run keys so a program starts automatically when the user logs in.
 
 ### Registry Persistence Detection
 
@@ -108,7 +117,7 @@ The value was configured to run:
 C:\Windows\System32\cmd.exe
 ```
 
-This type of registry location is commonly abused because anything placed under the Run key can execute when the user logs in.
+This registry location is commonly abused because values placed under the Run key can execute when the user logs in.
 
 ![Malicious Run Key](screenshots/malicious-run-key.png)
 
@@ -116,21 +125,92 @@ After creating and modifying the registry value, Splunk captured the activity as
 
 ![Registry Event Detected](screenshots/registry-event-detected.png)
 
-The event showed the registry path, the value name `evil`, the new value data, and the process responsible for the change. This confirmed that the Windows auditing configuration, Universal Forwarder, Splunk search, and alerting logic were working as expected.
-## Phase 5: Incident Response
+The event showed the registry path, the value name `evil`, the new value data, and the process responsible for the change. This confirmed that the auditing configuration, Splunk forwarding, search logic, and alerting workflow were working correctly.
 
-This phase covered basic response actions:
+## Phase 5: Ransomware Incident Response
 
-Identified suspicious activity
-Investigated events using Splunk searches
-Applied basic containment actions
-Performed initial analysis of the incident
+In this phase, a WannaCry ransomware sample was executed inside the isolated Windows VM to simulate a ransomware incident and practice the response workflow.
 
-This completed the end-to-end SOC workflow from detection to response.
+The goal was to observe the behavior, collect evidence, contain the host, review logs, remove the threat, and recover from a clean snapshot.
 
-Key Skills Demonstrated
-SIEM deployment and configuration (Splunk)
-Log collection and analysis
-Detection engineering and alert tuning
-Network segmentation using pfSense
-End-to-end blue team workflow
+### Initial Execution
+
+Before execution, the sample was placed inside the Windows VM along with test files used to observe the impact.
+
+![WannaCry Sample Before Execution](screenshots/wannacry-sample-before-execution.png)
+
+After execution, the WannaCry ransom note appeared on the endpoint, confirming active ransomware behavior.
+
+![WannaCry Ransom Note](screenshots/wannacry-ransom-note.png)
+
+### Impact and Artifacts
+
+The ransomware created several WannaCry-related files and artifacts on the desktop, including `.wnry` files and `@WanaDecryptor@` components.
+
+![WannaCry Dropped Files](screenshots/wannacry-dropped-files.png)
+
+An affected file was opened after execution. The file content appeared unreadable, confirming that the original data had been encrypted.
+
+![Encrypted File Evidence](screenshots/encrypted-file-evidence.png)
+
+### Splunk Detection
+
+Splunk captured Windows Security EventCode `4688`, showing process execution related to the ransomware activity.
+
+The observed processes included:
+
+- `taskdl.exe`
+- `taskse.exe`
+- `@WanaDecryptor@.exe`
+
+![WannaCry Process Execution](screenshots/wannacry-process-execution.png)
+
+This confirmed that Windows process creation auditing and Splunk log ingestion were working as expected.
+
+### Containment
+
+After confirming ransomware execution, the infected Windows VM was isolated using pfSense firewall rules to prevent further communication and possible lateral movement.
+
+![pfSense Ransomware Containment](screenshots/pfsense-ransomware-containment-rule.png)
+
+### Eradication
+
+Microsoft Defender detected the ransomware as `Ransom:Win32/WannaCrypt` and generated a ransomware alert.
+
+![Defender Ransomware Detection](screenshots/defender-ransomware-detection.png)
+
+The detected ransomware artifact was then quarantined by Microsoft Defender.
+
+![Defender Ransomware Quarantine](screenshots/defender-ransomware-quarantine.png)
+
+### Recovery
+
+Because the encrypted files could not be safely decrypted, recovery was done by restoring the Windows VM from a clean snapshot instead of attempting manual decryption.
+
+![Recovery After Snapshot](screenshots/recovery-after-snapshot.png)
+
+### Lessons Learned
+
+This phase showed that ransomware response is more than just detecting malware. A complete response includes confirming execution, identifying impact, isolating the affected host, reviewing security logs, removing the threat, and recovering from a trusted backup or snapshot.
+
+Key takeaways:
+
+- Ransomware should be handled as a high-severity incident.
+- Immediate containment is important to reduce the risk of spread.
+- Process creation logs are useful for identifying malware execution.
+- Endpoint protection and SIEM visibility work better together.
+- Backups and snapshots are essential when encrypted files cannot be safely decrypted.
+
+## Key Skills Demonstrated
+
+- SIEM deployment and configuration using Splunk Enterprise
+- Windows log collection using Splunk Universal Forwarder
+- Windows Event Log analysis
+- Detection engineering using SPL
+- Registry persistence detection
+- Process execution monitoring with EventCode `4688`
+- Alert creation and tuning in Splunk
+- Network segmentation using pfSense
+- Ransomware behavior analysis
+- Incident response workflow: detection, containment, eradication, and recovery
+- Snapshot-based recovery after ransomware impact
